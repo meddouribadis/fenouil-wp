@@ -220,11 +220,18 @@ function wooc_extra_register_fields() {?>
 */
 function wooc_validate_extra_register_fields( $username, $email, $validation_errors ) {
     if ( isset( $_POST['billing_first_name'] ) && empty( $_POST['billing_first_name'] ) ) {
-           $validation_errors->add( 'billing_first_name_error', __( '<strong>Erreur</strong>: Votre prénom doit être remplis!', 'woocommerce' ) );
+           $validation_errors->add( 'billing_first_name_error', __( '<strong>Erreur</strong>: Votre prénom doit être rempli !', 'woocommerce' ) );
     }
     if ( isset( $_POST['billing_last_name'] ) && empty( $_POST['billing_last_name'] ) ) {
-           $validation_errors->add( 'billing_last_name_error', __( '<strong>Erreur</strong>: Votre nom de famille doit être remplis!', 'woocommerce' ) );
+           $validation_errors->add( 'billing_last_name_error', __( '<strong>Erreur</strong>: Votre nom de famille doit être rempli !', 'woocommerce' ) );
     }
+	 if ( isset( $_POST['billing_categorie_socio_pro'] ) && empty( $_POST['billing_categorie_socio_pro'] ) ) {
+           $validation_errors->add( 'billing_categorie_socio_pro_error', __( '<strong>Erreur</strong>: Merci d\'indiquez votre catégorie socio pro !', 'woocommerce' ) );
+    }
+	if ( isset( $_POST['billing_birth_date'] ) && empty( $_POST['billing_birth_date'] ) ) {
+           $validation_errors->add( 'billing_birth_date_error', __( '<strong>Erreur</strong>: Merci d\'indiquez votre date de naissance !', 'woocommerce' ) );
+    }
+	
        return $validation_errors;
 }
 add_action( 'woocommerce_register_post', 'wooc_validate_extra_register_fields', 10, 3 );
@@ -454,4 +461,45 @@ function save_extra_user_profile_fields( $user_id ) {
 	update_user_meta( $user_id, 'billing_departement', $_POST['billing_departement']);
     update_user_meta( $user_id, 'billing_birth_date', $_POST['billing_birth_date']);
     update_user_meta( $user_id, 'billing_categorie_socio_pro', $_POST['billing_categorie_socio_pro']);
+}
+
+/**
+ * Process the checkout
+ */
+//add_action('woocommerce_checkout_process', 'my_custom_checkout_field_process');
+
+function my_custom_checkout_field_process() {
+    // Check if set, if its not set add an error.
+    if ( ! $_POST['billing_phone_new'] )
+        wc_add_notice( __( 'Phone 2 is compulsory. Please enter a value' ), 'error' );
+}
+
+
+/**
+ * Update the order meta with field value
+ */
+add_action( 'woocommerce_checkout_update_order_meta', 'my_custom_checkout_field_update_order_meta' );
+
+function my_custom_checkout_field_update_order_meta( $order_id ) {
+    if ( ! empty( $_POST['bank_name'] ) ) {
+        update_post_meta( $order_id, 'Nom de la Banque', sanitize_text_field( $_POST['bank_name'] ) );
+    }
+	
+	if ( ! empty( $_POST['bank_titular_name'] ) ) {
+        update_post_meta( $order_id, 'Titulaire du chèque', sanitize_text_field( $_POST['bank_titular_name'] ) );
+    }
+	
+	if ( ! empty( $_POST['bank_cheque_number'] ) ) {
+        update_post_meta( $order_id, 'Numéro de chèque', sanitize_text_field( $_POST['bank_cheque_number'] ) );
+    }
+}
+
+
+/**
+ * Display field value on the order edit page
+ */
+//add_action( 'woocommerce_admin_order_data_after_billing_address', 'my_custom_checkout_field_display_admin_order_meta', 10, 1 );
+
+function my_custom_checkout_field_display_admin_order_meta($order){
+    echo '<p><strong>'.__('Phone 2').':</strong> <br/>' . get_post_meta( $order->get_id(), 'billing_phone_new', true ) . '</p>';
 }
